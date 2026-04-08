@@ -28,8 +28,8 @@ class LLMOptimizer:
                 self.model_name = os.getenv("LM_STUDIO_MODEL", "Qwen2.5 Coder 14B")
             elif self.model_provider =="openai":
                 self.model_name = os.getenv("OPENAI_MODEL", "gpt-4")
-            elif self.model_provider == "anthropic":
-                self.model_name = os.getenv("ANTHROPIC_MODEL", "claude-opus")
+            # elif self.model_provider == "anthropic":
+            #     self.model_name = os.getenv("ANTHROPIC_MODEL", "claude-opus")
             else:
                 self.model_name = "local-model"
         else:
@@ -38,8 +38,8 @@ class LLMOptimizer:
         if api_key is None:
             if self.model_provider =="openai":
                 self.api_key = os.getenv("OPENAI_API_KEY")
-            elif self.model_provider == "anthropic":
-                self.api_key = os.getenv("ANTHROPIC_API_KEY")
+            # elif self.model_provider == "anthropic":
+            #     self.api_key = os.getenv("ANTHROPIC_API_KEY")
             else:
                 self.api_key = None 
         else:
@@ -132,5 +132,33 @@ Follow this exact format:
 ```
 """
         return prompt
+    
+    def call_llm(self, system_prompt:str, user_prompt:str)->str:
+        if self.model_provder =="lmstudio":
+            response = self.client.chat.completions.create(
+                model=self.model_name,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+                temperature=0.7, #creative but not much
+                max_tokens=2000,
+            )
+            return response.choices[0].message.content
+        
+        elif self.model_provider == "openai":
+            response = self.client.messages.create(
+                model=self.model_name,
+                max_tokens=2000,
+                system=system_prompt,
+                messages=[
+                    {"role": "user", "content": user_prompt}
+                ],
+            )
+            return response.content[0].text
+
+        else:
+            raise NotImplementedError()
+        
     
 
