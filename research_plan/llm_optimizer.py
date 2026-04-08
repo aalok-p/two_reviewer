@@ -172,4 +172,24 @@ Follow this exact format:
             reasoning = reasoning_match.group(1).strip() if reasoning_match else None
 
             return code, reasoning
+        return llm_response.strip(), None
+    
+    def propose_optimization(self, baseline_code:str, current_metrics: Optional[Dict]=None)->Tuple[str, Optional[str]]:
+        system_prompt = self._build_system_prompt()
+        user_prompt = self._build_optimization_prompt(baseline_code, current_metrics)
         
+        llm_response = self._call_llm(system_prompt, user_prompt)
+        
+        code, reasoning = self._extract_cuda_code(llm_response) #extract code
+        
+        return code, reasoning
+    
+    def add_attempt(self, attempt: OptimizationAttempt):
+        self.history.append(attempt)
+    
+    def best_attempt(self,) ->Optional[OptimizationAttempt]:
+        valid_attempts =[a for a in self.history if a.compilation_success and a.correctness_passed]
+        if not valid_attempts:
+            return None
+        return max(valid_attempts, key=lambda a:a.speedup)
+    
