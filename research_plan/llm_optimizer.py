@@ -1,7 +1,7 @@
 import os
 from dataclasses import dataclass
 from dotenv import load_dotenv
-from typing import Optional, List, Dict, Tuple
+from typing import Optional, List, Dict, Tuple, Callable
 import openai
 import re
 
@@ -193,3 +193,40 @@ Follow this exact format:
             return None
         return max(valid_attempts, key=lambda a:a.speedup)
     
+class GenericKernelBenchmark:
+    def __init__(self, baseline_code:str,input_generator: Callable, output_validator: Callable, kernel_name: str = "kernel"):
+        self.baseline_code = baseline_code
+        self.input_generator = input_generator
+        self.output_validator = output_validator
+        self.kernel_name = kernel_name
+
+        #measure baseline performance
+        self.baseline_time = None
+    
+    def generate_inputs(self):
+        return self.input_generator()
+    
+    def validate_correctness(self, output, reference):
+        return self.output_validator(output, reference)
+
+def optimize_akernel(baseline_code: str, input_generator: Callable, validator: Callable, model_provider: str = "lmstudio", model_name: str = "local-model", max_iterations: int = 10, api_key: Optional[str] = None) -> Tuple[str, float]:
+    optimizer =LLMOptimizer(model_provider=model_provider, model_name=model_name, api_key=api_key)
+    best_code =baseline_code
+    best_speedup=1.0
+
+    for iteration in range(max_iterations):
+        #llm proposes optimization
+        current_metrics = None  
+        optimized_code, reasoning = optimizer.propose_optimization(
+            baseline_code,
+            current_metrics,
+        )
+        
+        # TODO: Compile, profile, validate
+        attempt = OptimizationAttempt(iteration=iteration, code=optimized_code, compilation_success=True,   compilation_error=None,correctness_passed=True,  execution_time_ms=0.0,speedup=1.0,occupancy=0.0,memory_efficiency=0.0,reasoning=reasoning) optimizer.add_attempt(attempt)
+    
+    best_attempt = optimizer.get_best_attempt()
+    if best_attempt:
+        return best_attempt.code, best_attempt.speedup
+    
+    return baseline_code, 1.0
