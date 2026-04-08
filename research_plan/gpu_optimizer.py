@@ -48,3 +48,33 @@ class GPUOptimizer:
                 
         except Exception as e:
             return False, None, str(e)
+
+    def profile_kernel(self, ptx_code:str, inputs:Dict)->Dict:
+        return {'execution_time_ms': 0.0, 'occupancy': 0.0, 'memory_efficiency': 0.0, 'warp_divergence': 0.0,'shared_memory_bytes': 0,'registers_per_thread': 0,}
+    
+    def optimize(self, input_generator, validator, max_iterations: int=10, target_speedup: float=10.0) ->Tuple[str, float]:
+        print("llm powered kernel optimization")
+        print(f"Model: {self.llm_optimizer.model_name}")
+        print(f"Max iterations: {max_iterations}")
+        print(f"Target speedup: {target_speedup}×\n")
+
+        print("compiling baseline kernel...")
+        baseline_success, baseline_ptx, baseline_error = self.compile_kernel(self.baseline_code)
+        
+        if not baseline_success:
+            print(f"baseline compilation failed: {baseline_error}")
+            return self.baseline_code, 1.0
+        
+        print("baseline compiled successfully")
+        
+        #pofile baseline
+        inputs =input_generator()
+        baseline_metrics = self.profile_kernel(baseline_ptx, inputs)
+        self.baseline_time_ms = baseline_metrics.get('execution_time_ms', 1.0)
+        
+        if self.baseline_time_ms == 0.0:
+            self.baseline_time_ms = 1.0 
+        
+        print(f"Baseline time: {self.baseline_time_ms:.3f}ms\n")
+
+        
