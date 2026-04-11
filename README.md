@@ -1,6 +1,17 @@
+---
+title: Kernel Writer
+aemoji: 🧠
+colorFrom: blue
+colorTo: indigo
+sdk: gradio
+sdk_version: 4.44.0
+app_file: app.py
+pinned: false
+---
+
 # Kernel Writer
 
-CUDA kernel optimization
+CUDA kernel optimization 
 
 ## Run locally
 
