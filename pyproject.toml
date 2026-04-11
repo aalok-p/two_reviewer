@@ -9,7 +9,7 @@ description = "OpenEnv-compatible CUDA kernel optimization environment."
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-  "fastapi>=0.110.0",
+  "fastapi==0.104.1",
   "uvicorn>=0.30.0",
   "pydantic>=2.7.0",
   "openai>=1.0.0",
