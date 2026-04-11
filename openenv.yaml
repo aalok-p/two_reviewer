@@ -1,0 +1,55 @@
+name: kernel_writer
+version: 1.0.0
+description: |
+  Real world CUDA kernel engineering environment for iterative optimization, code review checks and performance driven reward shaping.
+
+environment:
+  type: code_optimization
+  runtime: python3.12.3
+  containerized: true
+
+metadata:
+  tags:
+    - openenv
+    - CUDA
+    - kernel_optimization
+    - reinforcement_learning
+  author: aaloksan
+
+tasks:
+  - id: vector_addition_easy
+    name: "Vector Addition Kernel Optimization"
+    difficulty: easy
+    objective: "Improve memory throughput while preserving correctness."
+    grader: deterministic_rule_based
+
+  - id: matmul_medium
+    name: "Matrix Multiplication Kernel Optimization"
+    difficulty: medium
+    objective: "Apply shared-memory tiling and synchronization safely."
+    grader: deterministic_rule_based
+
+  - id: reduction_hard
+    name: "Reduction Kernel Optimization"
+    difficulty: hard
+    objective: "Use warp-level optimization and reduce memory conflicts."
+    grader: deterministic_rule_based
+
+interfaces:
+  reset:
+    method: POST
+    path: /reset
+    returns: initial observation and info
+  step:
+    method: POST
+    path: /step
+    returns: observation, reward, done, info
+  state:
+    method: GET
+    path: /state
+    returns: current environment state
+
+baseline:
+  script: inference.py
+  model_env_var: MODEL_NAME
+  api_key_env_var: OPENAI_API_KEY

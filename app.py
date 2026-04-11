@@ -1,0 +1,61 @@
+import os
+from dotenv import load_dotenv
+from typing import Iterator, Tuple
+from env_server import KernelOptimization_env, TASKS
+from openai import OpenAI
+from models import Action
+import gradio as gr
+import traceback
+
+load_dotenv()
+
+def ui(task_id:str, max_steps:int, openai_api_key:str)-> Iterator[Tuple[str,str]]:
+    log= []
+    env=KernelOptimization_env()
+    api_key = openai_api_key or os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        yield "ERROR: Missing OPENAI_API_KEY", ""
+        return
+
+    model = os.getenv("MODEL_NAME", "gpt-4")
+    client = OpenAI(api_key=api_key, base_url=os.getenv("API_BASE_URL", "https://api.openai.com/v1"))
+    obs = env.reset(task_id=task_id)["observation"]
+    best_code = obs["current_best_code"]
+    log.append(f"Task: {obs['task_name']}")
+
+    for _ in range(max_steps):
+        try:
+            prompt = f"Optimize CUDA code:\n{obs['current_best_code']}\nPending checks: {obs['pending_checks']}\nReturn code only."
+            res = client.chat.completions.create(
+                model=model,
+                temperature=0.0,
+                messages=[
+                    {"role": "system", "content": "Return only optimized CUDA code."},
+                    {"role": "user", "content": prompt},
+                ],
+            )
+            code = (res.choices[0].message.content or "").strip() or obs["current_best_code"]
+            step = env.step(Action(optimized_code=code, strategy="ui_proposed"))
+            obs = step.observation.model_dump()
+            best_code = obs["current_best_code"]
+            log.append(f"step={obs['step_count']} reward={step.reward.value:.3f} speedup={obs['current_best_speedup']:.3f}x")
+            yield "\n".join(log), best_code
+            if step.done:
+                break
+        except Exception as e:
+            yield f"{chr(10).join(log)}\nERROR: {e}\n{traceback.format_exc()}", best_code
+            return
+
+with gr.Blocks(title="CUDA Kernel Optimizer") as demo:
+    gr.Markdown("CUDA Kernel Optimizer - OpenEnv-aligned workflow")
+    task = gr.Dropdown(choices=list(TASKS.keys()), value="vector_add_easy", label="Task")
+    steps = gr.Slider(minimum=1, maximum=12, value=6, step=1, label="Max Steps")
+    key = gr.Textbox(label="OpenAI API Key", type="password", placeholder="sk-...")
+    run = gr.Button("Run Optimization", variant="primary")
+    logs = gr.Textbox(label="Logs", lines=14)
+    code = gr.Code(label="Best Code", language="cpp", lines=16)
+    run.click(ui, inputs=[task, steps, key], outputs=[logs, code])
+
+
+if __name__ == "__main__":
+    demo.launch(server_name="0.0.0.0", server_port=7860, show_error=True)
