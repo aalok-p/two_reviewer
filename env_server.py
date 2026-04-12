@@ -202,8 +202,8 @@ def health_check():
     return {"status": "healthy", "service": "kernel-optimization-openenv"}
 
 @app.post("/reset")
-def reset(request: ResetRequest = ResetRequest()):
-    return env.reset(task_id=request.task_id)
+def reset(request: ResetRequest | None = None):
+    return env.reset(task_id=request.task_id if request else None)
 
 
 @app.post("/step")

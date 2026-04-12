@@ -1,11 +1,12 @@
 import os
 from dotenv import load_dotenv
 from typing import Iterator, Tuple
-from env_server import KernelOptimization_env, TASKS
+from env_server import KernelOptimization_env, TASKS, app as openenv_app
 from openai import OpenAI
 from models import Action
 import gradio as gr
 import traceback
+import uvicorn
 
 load_dotenv()
 
@@ -81,10 +82,8 @@ with gr.Blocks(title="CUDA Kernel Optimizer") as demo:
     task.change(task_baseline_code, inputs=[task], outputs=[kernel_input])
     run.click(ui, inputs=[task, kernel_input, steps, key], outputs=[logs, code])
 
+app = gr.mount_gradio_app(openenv_app, demo, path="/ui")
+
 
 if __name__ == "__main__":
-    demo.launch(
-        show_error=True,
-        server_name="0.0.0.0",
-        server_port=int(os.getenv("PORT", "7860")),
-    )
+    uvicorn.run("app:app", host="0.0.0.0", port=int(os.getenv("PORT", "7860")))
