@@ -7,6 +7,7 @@ from models import Action
 import gradio as gr
 import traceback
 import uvicorn
+from fastapi.responses import RedirectResponse
 
 load_dotenv()
 
@@ -83,6 +84,11 @@ with gr.Blocks(title="CUDA Kernel Optimizer") as demo:
     run.click(ui, inputs=[task, kernel_input, steps, key], outputs=[logs, code])
 
 app = gr.mount_gradio_app(openenv_app, demo, path="/ui")
+
+
+@app.get("/")
+def root():
+    return RedirectResponse(url="/ui")
 
 
 if __name__ == "__main__":

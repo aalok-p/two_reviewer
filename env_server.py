@@ -197,7 +197,7 @@ class KernelOptimization_env:
 env=KernelOptimization_env()
 app=FastAPI(title="Kernel Optimization", version="1.0.0")
 
-@app.get("/")
+@app.get("/health")
 def health_check():
     return {"status": "healthy", "service": "kernel-optimization-openenv"}
 
