@@ -13,7 +13,7 @@ load_dotenv()
 API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o-mini")
 API_KEY = os.getenv("OPENAI_API_KEY") or os.getenv("HF_TOKEN") or os.getenv("API_KEY")
-TASK_NAME = os.getenv("TASK_ID", "vector_add_easy")
+TASK_NAME = os.getenv("TASK_ID")
 BENCHMARK = "kernel_optimization"
 
 
@@ -85,8 +85,7 @@ def choose_action(client: Optional[OpenAI], observation: dict) -> Action:
         return fallback_action(observation)
 
 
-def main() -> int:
-    task_id = TASK_NAME if TASK_NAME in TASKS else "vector_add_easy"
+def run_episode(client: Optional[OpenAI], task_id: str) -> None:
     env = KernelOptimization_env()
     rewards: List[float] = []
     steps_taken = 0
@@ -94,27 +93,18 @@ def main() -> int:
     success = False
 
     log_start(task=task_id, env=BENCHMARK, model=MODEL_NAME)
-
     try:
-        client: Optional[OpenAI] = None
-        if API_KEY:
-            try:
-                client = OpenAI(api_key=API_KEY, base_url=API_BASE_URL)
-            except Exception:
-                client = None
         obs = env.reset(task_id=task_id)["observation"]
         done = False
-
         while not done:
             action = choose_action(client, obs)
-            action_str = action.optimized_code
             step_result = env.step(action)
             done = step_result.done
             obs = step_result.observation.model_dump()
             reward = step_result.reward.value
             rewards.append(reward)
             steps_taken = obs["step_count"]
-            log_step(step=steps_taken, action=action_str, reward=reward, done=done, error=None)
+            log_step(step=steps_taken, action=action.optimized_code, reward=reward, done=done, error=None)
 
         score = grade_episode(
             task_id,
@@ -125,18 +115,28 @@ def main() -> int:
         )
         score = min(max(score, 0.0), 1.0)
         success = score >= 0.1
-        return 0
     except Exception as exc:
-        log_step(
-            step=max(1, steps_taken + 1),
-            action="error",
-            reward=0.0,
-            done=True,
-            error=str(exc),
-        )
-        return 0
+        log_step(step=max(1, steps_taken + 1), action="error", reward=0.0, done=True, error=str(exc))
     finally:
         log_end(success=success, steps=steps_taken, score=score, rewards=rewards)
+
+
+def main() -> int:
+    client: Optional[OpenAI] = None
+    if API_KEY:
+        try:
+            client = OpenAI(api_key=API_KEY, base_url=API_BASE_URL)
+        except Exception:
+            client = None
+
+    if TASK_NAME and TASK_NAME in TASKS:
+        task_ids = [TASK_NAME]
+    else:
+        task_ids = list(TASKS.keys())
+
+    for task_id in task_ids:
+        run_episode(client, task_id)
+    return 0
 
 
 if __name__ == "__main__":

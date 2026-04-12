@@ -7,6 +7,7 @@ TASKS: Dict[str, Dict[str, Any]] ={
     "vector_add_easy": {
         "name": "Vector Addition Kernel Optimization",
         "difficulty": "easy",
+        "grader": "deterministic_rule_based",
         "max_steps": 5,
         "target_speedup": 1.8,
         "baseline_code": """extern "C" __global__ void vector_add(const float* a, const float* b, float* c, int n) 
@@ -24,6 +25,7 @@ TASKS: Dict[str, Dict[str, Any]] ={
     "matmul_medium": {
         "name": "Matrix Multiplication Kernel Optimization",
         "difficulty": "medium",
+        "grader": "deterministic_rule_based",
         "max_steps": 6,
         "target_speedup": 3.0,
         "baseline_code": """extern "C" __global__ void matmul(const float* A, const float* B, float* C, int N) 
@@ -45,6 +47,7 @@ TASKS: Dict[str, Dict[str, Any]] ={
     "reduction_hard": {
         "name": "Reduction Kernel Optimization",
         "difficulty": "hard",
+        "grader": "deterministic_rule_based",
         "max_steps":7,
         "target_speedup": 3.5,
         "baseline_code": """extern "C" __global__ void reduce_sum(const float* input, float* output, int n) 
@@ -118,6 +121,7 @@ class KernelOptimization_env:
                 "task_id": self.current_task_id,
                 "task_name": task["name"],
                 "difficulty": task["difficulty"],
+                "grader": task["grader"],
                 "max_steps": task["max_steps"],
                 "target_speedup": task["target_speedup"],
                 "checks": task["checks"],
