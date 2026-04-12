@@ -30,7 +30,7 @@ Set the OpenAI key in Space **Settings → Variables and secrets** as:
 
 Optional:
 
-- `MODEL_NAME` (default: `gpt-4`)
+- `MODEL_NAME` (default: `gpt-5.4`)
 - `API_BASE_URL` (default: `https://api.openai.com/v1`)
 
 ## Submission validation
